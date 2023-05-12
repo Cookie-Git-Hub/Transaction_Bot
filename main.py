@@ -1,32 +1,60 @@
 import disnake
 from disnake.ext import commands
-from functions.transaction_checker import transaction_check
+import asyncio
+from checker import coin_checker, transaction_checker, add_address_to_list, remove_address_from_list
+from show_address_list import show_address_list
+
 bot = commands.Bot(command_prefix="/",
                    intents=disnake.Intents.all(),
                    activity=disnake.Game('Waiting for tokens',
                    status=disnake.Status.online))
 
+channel = 1106265730275622922
+stop_flag = False
+
+with open('help_message.txt', 'r', encoding='utf-8') as file:
+    msg = file.read()
+
 @bot.event
 async def on_ready():
     print("The bot is ready!")
 
-@bot.command(name='TC', description='Write your token')
-async def TChecker(ctx:commands.Context, key, count=5):
-    message = transaction_check(key, count) 
-    await ctx.send(message)
+# @bot.slash_command(name='help', description='Bot description')
+# async def help(inter):
+#     await inter.response.send_message(msg)
 
-@bot.command(name='tc', description='Write your token')
-async def TChecker(ctx:commands.Context, key, count=5):
-    message = transaction_check(key, count) 
-    await ctx.send(message)
+@bot.slash_command(name='add', description='Add profile link')
+async def add(inter, address):
+    await inter.channel.send(add_address_to_list(address))
 
-@bot.slash_command(name='help', description='Bot description')
-async def help1(inter):
-    msg = "[RUS]" + "\n" + "**Transaction Checker bot** - бот для отслеживания последних транзакций пользователя по его токену https://bscscan.com/." + "\n" + "Для вызова команды просмотра транзакций напишите “/TC” или “/tc”. Дальше через пробел укажите токен человека. После через ещё один пробел можно указать количество последних транзакций, которые хотите увидеть. По умолчанию эта опция имеет значение 5." + "\n" + "[ENG]" + "\n" + "**Transaction Checker bot** - a bot for tracking a user's latest transactions using his token https://bscscan.com/." + "\n" + "To call the transaction checker bot, type " + "/TC " + "or " + "/tc." + "\n" + "Next, after a space, write the person's token. After another space, you can specify the number of recent transactions you want to see. The default value of this option is 5."
-    await inter.response.send_message(msg)
+@bot.slash_command(name='remove', description='Remove profile link')
+async def remove(inter, address):
+    await inter.channel.send(remove_address_from_list(address))
+
+@bot.slash_command(name='list', description='See address list')
+async def help(inter):
+    address_list = show_address_list() 
+    await inter.response.send_message(address_list)
+    
+@bot.slash_command(name='start', description='Start checking transactions')
+async def start(inter): 
+    await inter.channel.send('**Monitoring started**')
+    global stop_flag
+    while not stop_flag: 
+        bep_transactions =  coin_checker()
+        transactions =  transaction_checker()  
+        for transaction in bep_transactions:
+            await inter.channel.send(transaction)
+        for transaction in transactions:
+            await inter.channel.send(transaction)
+        await asyncio.sleep(60)
+
+@bot.slash_command(name='stop', description='Stop monitoring transactions')
+async def stop(inter):
+    global stop_flag
+    stop_flag = True
+    await inter.channel.send('**Monitoring has been stoped**')
+    
 
 token = open('token.env', 'r').readline()
 bot.run(token)
-
-
-
