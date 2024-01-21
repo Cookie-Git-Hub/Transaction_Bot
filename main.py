@@ -9,7 +9,7 @@ bot = commands.Bot(command_prefix="/",
                    activity=disnake.Game('Waiting for tokens',
                    status=disnake.Status.online))
 
-channel = 1106265730275622922
+channel = #
 stop_flag = False
 
 with open('help_message.txt', 'r', encoding='utf-8') as file:
